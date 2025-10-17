@@ -1,0 +1,1 @@
+export enum PontoType {ENTRADA, SAIDA}
