@@ -1,1 +1,4 @@
-export enum PontoType {ENTRADA, SAIDA}
+export enum PontoType {
+  ENTRADA = "ENTRADA",
+  SAIDA = "SAIDA"
+}

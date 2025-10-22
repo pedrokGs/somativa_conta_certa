@@ -1,13 +1,12 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-
-// página de interação do usuário UI
+import styles from './page.module.css';
 
 export default function LoginPage() {
     
   const [email, setEmail] = useState("");
-  const [senha, setSenha] = useState("");
+  const [password, setPassword] = useState("");
   const [erro, setErro] = useState("");
 
   
@@ -20,19 +19,19 @@ export default function LoginPage() {
 
     try {
       const response = await fetch(
-        "/api/usuarios/login", //rota da api
+        "/api/users/login", //rota da api
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, senha }),
+          body: JSON.stringify({ email, password }),
         }
       );
-      
+
       const data = await response.json();
       if (data.success) {
-        
+
         localStorage.setItem("token", data.token);
-        localStorage.setItem("funcao", data.usuario.funcao);
+        localStorage.setItem("role", data.usuario.role);
         route.push("/dashboard");
       } else {
         const dataErro = data.error;
@@ -45,29 +44,31 @@ export default function LoginPage() {
   };
   
   return (
-    <div>
-      <form onSubmit={handleSubmit}>
-        <h2>Login</h2>
-        {erro && <p style={{ color: "red" }}>{erro}</p>}
-        <div>
-          <label htmlFor="email">Email</label>
+    <div className={styles.container}>
+      <form onSubmit={handleSubmit} className={styles.form}>
+        <h2 className={styles.titulo}>Login</h2>
+        {erro && <p className={styles.erro}>{erro}</p>}
+        <div className={styles.campo}>
+          <label htmlFor="email" className={styles.label}>Email</label>
           <input
-            type="text"
+            type="email" // Use type email
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            className={styles.input}
           />
         </div>
-        <div>
-          <label htmlFor="senha">Senha</label>
+        <div className={styles.campo}>
+          <label htmlFor="senha" className={styles.label}>Senha</label>
           <input
             type="password"
-            value={senha}
-            onChange={(e) => setSenha(e.target.value)}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             required
+            className={styles.input}
           />
         </div>
-        <button type="submit">Entrar</button>
+        <button type="submit" className={styles.botao}>Entrar</button>
       </form>
     </div>
   );

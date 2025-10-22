@@ -1,142 +1,244 @@
 "use client";
 import { useEffect, useState } from "react";
-import styles from "./dashboardAdmin.module.css";
+import { UserRole } from "@/common/enums/user-role";
+import styles from './dashboard-admin.module.css';
 
-type User = {
-	id: string;
-	name: string;
-	email: string;
-	role: string;
-};
-
-const STORAGE_KEY = "cc_users";
-
-function uuid() {
-	return Math.random().toString(36).substring(2, 9);
+interface User {
+    _id: string;
+    name: string;
+    email: string;
+    role: string;
 }
 
-export default function DashboardAdmin(){
-	const [users, setUsers] = useState<User[]>([]);
-	const [name, setNome] = useState("");
-	const [email, setEmail] = useState("");
-	const [role, setFuncao] = useState("ADMIN");
-	const [error, setError] = useState<string | null>(null);
+interface ReportData {
+    userName: string;
+    totalHours: number;
+}
 
-	useEffect(()=>{
-		const raw = localStorage.getItem(STORAGE_KEY);
-		if(raw){
-			try{
-				setUsers(JSON.parse(raw));
-			}catch(e){
-				setUsers([]);
-			}
-		}else{
-			// seed with an admin user if empty
-			const seed: User[] = [
-				{ id: uuid(), name: "Admin", email: "admin@gmail.com", role: "ADMIN" }
-			];
-			localStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
-			setUsers(seed);
-		}
-	}, []);
+export default function DashboardAdmin() {
+    const [users, setUsers] = useState<User[]>([]);
+    const [reportData, setReportData] = useState<ReportData[]>([]);
+    const [name, setNome] = useState("");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [role, setFuncao] = useState(UserRole.USER);
+    const [error, setError] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
 
-	useEffect(()=>{
-		// persist whenever users change
-		localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
-	}, [users]);
+    useEffect(() => {
+        fetchUsers();
+        fetchReport();
+    }, []);
 
-	const validarEmail = (e: string) => {
-		return /\S+@\S+\.\S+/.test(e);
-	}
+    const fetchUsers = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            const response = await fetch("/api/users", {
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                },
+            });
+            const data = await response.json();
+            if (data.success) {
+                setUsers(data.data);
+            }
+        } catch (error) {
+            console.error("Erro ao buscar usuários:", error);
+        }
+    };
 
-	const handleCreate = (ev?: React.FormEvent) =>{
-		ev?.preventDefault();
-		setError(null);
-		if(!name.trim() || !email.trim()){
-			setError("Nome e email são obrigatórios.");
-			return;
-		}
-		if(!validarEmail(email)){
-			setError("Email inválido.");
-			return;
-		}
+    const fetchReport = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            const response = await fetch("/api/pontos/report", {
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                },
+            });
+            const data = await response.json();
+            if (data.success) {
+                setReportData(data.data);
+            }
+        } catch (error) {
+            console.error("Erro ao buscar relatório:", error);
+        }
+    };
 
-		const newUser: User = { id: uuid(), name: name.trim(), email: email.trim(), role };
-		setUsers(prev => [newUser, ...prev]);
+    const validarEmail = (e: string) => {
+        return /\S+@\S+\.\S+/.test(e);
+    }
 
-		// limpar formulário
-		setNome("");
-		setEmail("");
-		setFuncao("usuario");
-	}
+    const handleCreate = async (ev?: React.FormEvent) => {
+        ev?.preventDefault();
+        setError(null);
+        setLoading(true);
 
-	const handleDelete = (id: string) =>{
-		if(!confirm("Confirma excluir este usuário?")) return;
-		setUsers(prev => prev.filter(u => u.id !== id));
-	}
+        if (!name.trim() || !email.trim() || !password.trim()) {
+            setError("Nome, email e senha são obrigatórios.");
+            setLoading(false);
+            return;
+        }
+        if (!validarEmail(email)) {
+            setError("Email inválido.");
+            setLoading(false);
+            return;
+        }
 
-	return (
-		<section style={{padding:20}}>
-			<h2>Gestão de Usuários (Admin)</h2>
+        try {
+            const token = localStorage.getItem("token");
+            const response = await fetch("/api/users", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    name: name.trim(),
+                    email: email.trim(),
+                    password: password.trim(),
+                    role: UserRole[role as number]
+                }),
+            });
 
-			<div style={{display:"flex",gap:20,flexWrap:"wrap",alignItems:"flex-start"}}>
-				<form onSubmit={handleCreate} style={{minWidth:300,padding:12,border:"1px solid #ddd",borderRadius:6}}>
-					<h3>Criar usuário</h3>
-					{error && <div style={{color:"#b00020",marginBottom:8}}>{error}</div>}
-					<div style={{marginBottom:8}}>
-						<label style={{display:"block",fontSize:12}}>Nome</label>
-						<input value={name} onChange={e=>setNome(e.target.value)} style={{width:"100%",padding:8}} />
-					</div>
-					<div style={{marginBottom:8}}>
-						<label style={{display:"block",fontSize:12}}>Email</label>
-						<input value={email} onChange={e=>setEmail(e.target.value)} style={{width:"100%",padding:8}} />
-					</div>
-					<div style={{marginBottom:12}}>
-						<label style={{display:"block",fontSize:12}}>Função</label>
-						<select value={role} onChange={e=>setFuncao(e.target.value)} style={{width:"100%",padding:8}}>
-							<option value="admin">Admin</option>
-							<option value="user">Usuario</option>
-						</select>
-					</div>
-					<div style={{display:"flex",gap:8}}>
-						<button type="submit" style={{padding:"8px 12px"}}>Criar</button>
-						<button type="button" onClick={()=>{setNome("");setEmail("");setFuncao("usuario");setError(null);}} style={{padding:"8px 12px"}}>Limpar</button>
-					</div>
-				</form>
+            const data = await response.json();
+            if (data.success) {
+                fetchUsers();
+                setNome("");
+                setEmail("");
+                setPassword("");
+                setFuncao(UserRole.USER);
+            } else {
+                setError(data.error || "Erro ao criar usuário");
+            }
+        } catch (error) {
+            console.error("Erro:", error);
+            setError("Erro de servidor");
+        } finally {
+            setLoading(false);
+        }
+    }
 
-				<div style={{flex:1,minWidth:320}}>
-					<h3>Lista de usuários</h3>
-					<div style={{overflowX:"auto",border:"1px solid #eee",borderRadius:6}}>
-						<table style={{width:"100%",borderCollapse:"collapse"}}>
-							<thead>
-								<tr style={{background:"#fafafa"}}>
-									<th style={{textAlign:"left",padding:8,borderBottom:"1px solid #eee"}}>Nome</th>
-									<th style={{textAlign:"left",padding:8,borderBottom:"1px solid #eee"}}>Email</th>
-									<th style={{textAlign:"left",padding:8,borderBottom:"1px solid #eee"}}>Função</th>
-									<th style={{textAlign:"center",padding:8,borderBottom:"1px solid #eee"}}>Ações</th>
-								</tr>
-							</thead>
-							<tbody>
-								{users.map(u=> (
-									<tr key={u.id}>
-										<td style={{padding:8,borderBottom:"1px solid #f5f5f5"}}>{u.name}</td>
-										<td style={{padding:8,borderBottom:"1px solid #f5f5f5"}}>{u.email}</td>
-										<td style={{padding:8,borderBottom:"1px solid #f5f5f5"}}>{u.role}</td>
-										<td style={{padding:8,borderBottom:"1px solid #f5f5f5",textAlign:"center"}}>
-											<button onClick={()=>handleDelete(u.id)} style={{padding:"6px 8px"}}>Excluir</button>
-										</td>
-									</tr>
-								))}
-								{users.length === 0 && (
-									<tr>
-										<td colSpan={4} style={{padding:12,textAlign:"center"}}>Nenhum usuário encontrado.</td>
-									</tr>
-								)}
-							</tbody>
-						</table>
-					</div>
-				</div>
-			</div>
-		</section>
-	)
+    const handleDelete = async (id: string) => {
+        if (!confirm("Confirma excluir este usuário?")) return;
+
+        try {
+            const token = localStorage.getItem("token");
+            const response = await fetch(`/api/users/${id}`, {
+                method: "DELETE",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                },
+            });
+
+            if (response.ok) {
+                fetchUsers();
+            } else {
+                console.error("Erro ao excluir usuário");
+            }
+        } catch (error) {
+            console.error("Erro:", error);
+        }
+    }
+
+    return (
+        <section className={styles.dashboardContainer}>
+            <h1 className={styles.mainTitle}>Gestão de Usuários (Admin)</h1>
+
+            <div className={styles.contentWrapper}>
+                <form onSubmit={handleCreate} className={styles.creationForm}>
+                    <h2 className={styles.formTitle}>Criar usuário</h2>
+                    {error && <div className={styles.errorBox}>{error}</div>}
+                    <div className={styles.formGroup}>
+                        <label className={styles.label}>Nome</label>
+                        <input value={name} onChange={e => setNome(e.target.value)} className={styles.input} />
+                    </div>
+                    <div className={styles.formGroup}>
+                        <label className={styles.label}>Email</label>
+                        <input value={email} onChange={e => setEmail(e.target.value)} className={styles.input} type="email" />
+                    </div>
+                    <div className={styles.formGroup}>
+                        <label className={styles.label}>Senha</label>
+                        <input type="password" value={password} onChange={e => setPassword(e.target.value)} className={styles.input} />
+                    </div>
+                    <div className={styles.formGroup}>
+                        <label className={styles.label}>Função</label>
+                        <select value={role} onChange={e => setFuncao(e.target.value as unknown as UserRole)} className={styles.select}>
+                            <option value={UserRole.ADMIN.toString()}>Admin</option>
+                            <option value={UserRole.USER.toString()}>Usuario</option>
+                        </select>
+                    </div>
+                    <div className={styles.buttonGroup}>
+                        <button type="submit" disabled={loading} className={styles.createButton}>
+                            {loading ? "Criando..." : "Criar"}
+                        </button>
+                        <button type="button" onClick={() => { setNome(""); setEmail(""); setPassword(""); setFuncao(UserRole.USER); setError(null); }} className={styles.clearButton}>
+                            Limpar
+                        </button>
+                    </div>
+                </form>
+
+                <div className={styles.tableSection}>
+                    <h2 className={styles.sectionTitle}>Lista de usuários</h2>
+                    <div className={styles.tableWrapper}>
+                        <table className={styles.dataTable}>
+                            <thead>
+                                <tr>
+                                    <th className={styles.tableHeader}>Nome</th>
+                                    <th className={styles.tableHeader}>Email</th>
+                                    <th className={styles.tableHeader}>Função</th>
+                                    <th className={styles.tableHeaderCenter}>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {users.map(u => (
+                                    <tr key={u._id} className={styles.tableRow}>
+                                        <td className={styles.tableCell}>{u.name}</td>
+                                        <td className={styles.tableCell}>{u.email}</td>
+                                        <td className={styles.tableCell}>{u.role}</td>
+                                        <td className={styles.tableCellCenter}>
+                                            <button onClick={() => handleDelete(u._id)} className={styles.deleteButton}>
+                                                Excluir
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {users.length === 0 && (
+                                    <tr>
+                                        <td colSpan={4} className={styles.emptyTable}>Nenhum usuário encontrado.</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div className={styles.reportSection}>
+                <h2 className={styles.sectionTitle}>Relatório de Horas Trabalhadas</h2>
+                <div className={styles.tableWrapper}>
+                    <table className={styles.dataTable}>
+                        <thead>
+                            <tr>
+                                <th className={styles.tableHeader}>Usuário</th>
+                                <th className={styles.tableHeader}>Horas Totais</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {reportData.map((report, index) => (
+                                <tr key={index} className={styles.tableRow}>
+                                    <td className={styles.tableCell}>{report.userName}</td>
+                                    <td className={styles.tableCell}>{report.totalHours.toFixed(2)}h</td>
+                                </tr>
+                            ))}
+                            {reportData.length === 0 && (
+                                <tr>
+                                    <td colSpan={2} className={styles.emptyTable}>Nenhum relatório disponível.</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    )
 }

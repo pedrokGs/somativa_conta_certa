@@ -9,7 +9,7 @@ if(!MONGO_URI){
 let cached = (global as any).mongoose;
 
 if(!cached){
-    cached = (global as any).mongoose = {conm:null, promise: null};
+    cached = (global as any).mongoose = {conn:null, promise: null};
 }
 
 async function connectMongo(){

@@ -18,8 +18,8 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const data = await req.json();
-    const newOrdemServico = await createPonto(data);
-    return NextResponse.json({ success: true, data: newOrdemServico });
+    const newPonto = await createPonto(data);
+    return NextResponse.json({ success: true, data: newPonto });
   } catch (error) {
     return NextResponse.json({ success: false, error: error });
   }

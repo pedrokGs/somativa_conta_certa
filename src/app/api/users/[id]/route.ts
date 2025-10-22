@@ -1,59 +1,26 @@
-import {
-  deleteUser ,
-  getUserById,
-  updateUser,
-} from "@/controllers/user-controller";
 import { NextRequest, NextResponse } from "next/server";
+import connectMongo from "@/services/mongodb";
+import User from "@/models/user";
 
-interface Parametro {
-  id: string;
-}
-
-//GET One
-export async function GET({ params }: { params: Parametro }) {
+export async function DELETE(req: NextRequest) {
   try {
-    const { id } = params; //converte parametro em id
-    const data = await getUserById(id); //busca o usuario pelo id
-    if (!data) {
-      //errro de não encontrado
-      return NextResponse.json({ success: false, error: "Not Found" });
-    } //se econtrado retorna o usuario
-    return NextResponse.json({ success: true, data: data });
-  } catch (error) {
-    //erro de conexão
-    return NextResponse.json({ success: false, error: error });
-  }
-}
+    const url = new URL(req.url);
+    const id = url.pathname.split("/").pop();
 
-// PATCH
-export async function PATCH(
-  { params }: { params: Parametro },
-  req: NextRequest
-) {
-  try {
-    const { id } = params; //converte parametro em id
-    const data = await req.json(); //convert para json
-    const usuarioAtualizado = await updateUser(id, data); //busca o usuario pelo id
-    if (!data) {
-      //errro de não encontrado
-      return NextResponse.json({ success: false, error: "Not Found" });
-    } //se econtrado retorna o usuario
-    return NextResponse.json({ success: true, data: usuarioAtualizado });
-  } catch (error) {
-    //erro de conexão
-    return NextResponse.json({ success: false, error: error });
-  }
-}
+    if (!id) {
+      return NextResponse.json({ success: false, error: "ID não fornecido" }, { status: 400 });
+    }
 
-//DELETE
+    await connectMongo();
 
-export async function DELETE({ params }: { params: Parametro }) {
-  try {
-    const { id } = params; //converte parametro em id
-    await deleteUser(id); //deleta o usuario
-    return NextResponse.json({ success: true, data: {} });
+    const deletedUser = await User.findByIdAndDelete(id);
+    if (!deletedUser) {
+      return NextResponse.json({ success: false, error: "Usuário não encontrado" }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, data: {} }, { status: 200 });
   } catch (error) {
-    //erro de conexão
-    return NextResponse.json({ success: false, error: error });
+    console.error("Erro ao deletar usuário:", error);
+    return NextResponse.json({ success: false, error: (error as Error).message }, { status: 500 });
   }
 }

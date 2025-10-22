@@ -1,0 +1,141 @@
+
+.dashboardContainer {
+    padding: 30px;
+    max-width: 900px;
+    margin: 0 auto;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+}
+
+.mainTitle {
+    color: #343a40;
+    margin-bottom: 30px;
+    font-size: 2rem;
+    border-bottom: 3px solid #6f42c1;
+    padding-bottom: 10px;
+}
+
+.headerControls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 15px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.registerButton {
+    padding: 12px 25px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+
+.registerButton:hover {
+    background-color: #0056b3;
+}
+
+.hoursDisplay {
+    font-size: 1.1rem;
+    color: #495057;
+}
+
+.totalHours {
+    color: #28a745;
+    font-weight: 700;
+    font-size: 1.2rem;
+}
+
+.sectionTitle {
+    color: #495057;
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+}
+
+.tableWrapper {
+    overflow-x: auto;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e9ecef;
+}
+
+.dataTable {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.tableHeaderRow {
+    background: #e9ecef;
+}
+
+.tableHeader {
+    text-align: left;
+    padding: 12px;
+    border-bottom: 2px solid #dee2e6;
+    color: #495057;
+    font-weight: 700;
+}
+
+.tableRow:nth-child(even) {
+    background-color: #fcfcfc;
+}
+
+.tableRow:hover {
+    background-color: #f1f7fe;
+}
+
+.tableCell {
+    padding: 12px;
+    border-bottom: 1px solid #f0f0f0;
+    color: #343a40;
+}
+
+.tagIn, .tagOut {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: inline-block;
+    min-width: 50px;
+    text-align: center;
+}
+
+.tagIn {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.tagOut {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+
+@media (max-width: 600px) {
+    .headerControls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+
+    .registerButton {
+        width: 100%;
+    }
+
+    .dashboardContainer {
+        padding: 15px;
+    }
+}

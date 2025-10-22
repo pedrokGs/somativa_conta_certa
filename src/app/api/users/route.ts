@@ -1,26 +1,39 @@
-//rotas que não precisam de ID ( GET / POST)
-
-import { createUser, getUsers } from "@/controllers/user-controller";
 import { NextRequest, NextResponse } from "next/server";
-
-// http -> request
-export async function GET() {
-  try {
-    const data = await getUsers(); //busca todos os dados da coleção
-    return NextResponse.json({ success: true, data: data });
-  } catch (error) {
-    return NextResponse.json({ success: false, error: error });
-  }
-}
+import connectMongo from "@/services/mongodb";
+import User from "@/models/user";
 
 export async function POST(req: NextRequest) {
-  //passa os dados do HTML
-  try {
-    const data = await req.json(); //convert o req em json
-    const novoUsuario = await createUser(data); //faz a solicitação http
-    return NextResponse.json({ success: true, data: novoUsuario }); //retorna os dados apos inserir usuario no banco
-  } catch (error) {
-    //retrona o erro, se der erro
-    return NextResponse.json({ success: false, error: error });
-  }
+    try {
+        const { name, email, password, role } = await req.json();
+        if (!name || !email || !password || !role) {
+            return NextResponse.json({ success: false, error: "Todos os campos são obrigatórios" });
+        }
+
+        await connectMongo();
+
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return NextResponse.json({ success: false, error: "Usuário já existe" });
+        }
+
+        const newUser = new User({ name, email, password, role });
+        await newUser.save();
+
+        return NextResponse.json({ success: true, data: newUser });
+    } catch (error) {
+        return NextResponse.json({ success: false, error: error });
+    }
 }
+
+export async function GET(req: NextRequest) {
+    try {
+        await connectMongo();
+
+        const users = await User.find().select("-password");
+        return NextResponse.json({ success: true, data: users });
+    } catch (error) {
+        console.error("Erro ao buscar usuários:", error);
+        return NextResponse.json({ success: false, error: "Erro ao buscar usuários" });
+    }
+}
+

@@ -7,29 +7,39 @@ import DashboardAdmin from "../components/dashboard-admin";
 
 export default function DashboardPage(){
     const router = useRouter();
-    // const [userRole, setUserRole] = useState<string | null>(null);
+    const [userRole, setUserRole] = useState<string | null>(null);
 
-    // useEffect(()=>{
-    //     const role = localStorage.getItem("userRole");
-    //     if(!role) {
-    //         router.push("/login");
-    //     }else{
-    //         setUserRole(role);
-    //     }
-    // });
+    useEffect(()=>{
+        const token = localStorage.getItem("token");
+        if(!token) {
+            router.push("/login");
+            return;
+        }
+
+        // Decode JWT to get role
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            setUserRole(payload.role);
+        } catch (error) {
+            console.error("Invalid token:", error);
+            router.push("/login");
+        }
+    }, [router]);
 
     const handleLogout = async () => {
         localStorage.removeItem("token");
-        localStorage.removeItem("userRole");
+        localStorage.removeItem("role");
         router.push("/login");
     };
 
     const renderDashboard = () => {
-        // if( userRole?.toLowerCase() === "user"){
-            // return <DashboardUser />;
-        // } else if (userRole === "admin"){
+        if( userRole?.toUpperCase() === "USER"){
+            return <DashboardUser />;
+        } else if (userRole?.toUpperCase() === "ADMIN"){
             return <DashboardAdmin />;
-        // } 
+        } else {
+            return <div>Carregando...</div>;
+        }
     };
 
     return (

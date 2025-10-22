@@ -1,36 +1,168 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sistema de Gestão de Pontos - Conta Certa
 
-## Getting Started
+Este projeto é um backend simples de gerenciamento de ponto de trabalho utilizando Next.js, MongoDB e JWT para autenticação.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Tecnologias
+
+- Next.js (API Routes)
+- MongoDB + Mongoose
+- JWT (jsonwebtoken)
+- bcrypt para hash de senhas
+- TypeScript
+
+---
+
+## Funcionalidades
+
+- Cadastro de usuários
+- Login e geração de token JWT
+- Middleware de autenticação
+- Controle de permissões por role (USER / ADMIN)
+- Proteção de rotas
+
+---
+
+## Variáveis de Ambiente
+
+```env
+MONGODB_URI=<connection-string>
+JWT_SECRET=<chave-secreta>
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Endpoints
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### POST /api/users
+Cria um novo usuário.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+**Body:**
+```json
+{
+  "name": "João",
+  "email": "joao@email.com",
+  "password": "123456",
+  "role": "USER"
+}
+```
 
-## Learn More
+**Resposta:**
+```json
+{
+  "success": true,
+  "token": "<JWT_TOKEN>",
+  "usuario": {
+    "id": "<USER_ID>",
+    "email": "joao@email.com",
+    "name": "João",
+    "role": "USER"
+  }
+}
+```
+### POST /api/users
+Cria um novo usuário.
 
-To learn more about Next.js, take a look at the following resources:
+**Body:**
+```json
+{
+  "name": "João",
+  "email": "joao@email.com",
+  "password": "123456",
+  "role": "USER"
+}
+```
+**Resposta:**
+```json
+{
+  "success": true,
+  "token": "<JWT_TOKEN>",
+  "usuario": {
+    "id": "<USER_ID>",
+    "email": "joao@email.com",
+    "name": "João",
+    "role": "USER"
+  }
+}
+```
+### POST /api/login
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Faz login e retorna token JWT.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Body:**
+```json
+{
+  "email": "joao@email.com",
+  "password": "123456"
+}
+```
 
-## Deploy on Vercel
+**Resposta:**
+```json
+{
+  "success": true,
+  "token": "<JWT_TOKEN>",
+  "usuario": {
+    "id": "<USER_ID>",
+    "email": "joao@email.com",
+    "name": "João",
+    "role": "USER"
+  }
+}
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Autenticação
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Todas as requisições protegidas devem enviar o token JWT no header:
+
+- O middleware `verifyToken` valida o token e extrai os dados do usuário.
+- Somente usuários autenticados podem acessar rotas protegidas.
+- Roles podem ser usadas para controlar acesso (ex.: apenas ADMIN pode acessar `/admin`).
+
+## Diagrama de Classes (Mermaid)
+
+```mermaid
+classDiagram
+    class IUser {
+        +_id: string
+        +name: string
+        +email: string
+        +password?: string
+        +role: string
+        +createdAt: Date
+        +comparePassword(passwordUser: string): Promise<boolean>
+    }
+
+    class AuthUser {
+        +id: string
+        +name: string
+        +email: string
+        +role: string
+    }
+
+    class UserSchema
+    UserSchema --> IUser
+
+    class JWT {
+        +sign(payload, secret, options)
+        +verify(token, secret)
+    }
+
+    IUser --> JWT : gera token
+    JWT --> AuthUser : payload seguro
+```
+
+## Fluxo de Autenticação (Mermaid)
+
+```mermaid
+flowchart TD
+    A[Usuário envia login (email + senha)] --> B{Autenticar usuário?}
+    B -- Não --> C[Retorna erro 401]
+    B -- Sim --> D[Gerar token JWT com AuthUser]
+    D --> E[Retornar token + dados do usuário]
+    E --> F[Frontend armazena token]
+    F --> G[Requisições subsequentes com Authorization: Bearer <token>]
+    G --> H[Middleware verifica token]
+    H --> I{Token válido?}
+    I -- Não --> J[Retorna erro 401]
+    I -- Sim --> K[Requisição continua para a rota protegida]
+```

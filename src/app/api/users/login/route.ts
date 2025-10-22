@@ -15,13 +15,13 @@ if (!JWT_SECRET) {
 // método para solicitar login do usuario
 export async function POST(req: NextRequest) {
     try {
-        const { email, senha } = await req.json(); //convert para json
+        const { email, password } = await req.json(); //convert para json
         //validar os dados 
-        if (!email || !senha) {
+        if (!email || !password) {
             return NextResponse.json({ success: false, error: "Email e Senha São Obrigatório" });
         }
         // método de autenticação
-        const usuario = await authenticateUser(email, senha);
+        const usuario = await authenticateUser(email, password);
         if (!usuario) {
             return NextResponse.json({ success: false, error: "Usuário ou Senha inválidos" });
         }
